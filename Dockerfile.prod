@@ -1,0 +1,32 @@
+# base
+FROM node:21-alpine3.19 AS base
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+WORKDIR /usr/src/app
+
+# Dependencies
+FROM base AS deps
+COPY package*.json ./
+COPY pnpm-lock.yaml ./
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+
+# Builder
+FROM base AS build
+
+COPY --from=deps /usr/src/app/node_modules ./node_modules
+COPY . .
+RUN pnpm run build
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile
+
+
+# Create final image
+FROM base AS prod
+
+COPY --from=build /usr/src/app/node_modules ./node_modules
+COPY --from=build /usr/src/app/dist ./dist
+ENV NODE_ENV=production
+USER node
+EXPOSE 3000
+CMD ["node", "dist/main.js"]
