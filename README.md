@@ -15,6 +15,13 @@ hookdeck listen <port> <source-name>
 5. Run the application
 
 
+## Production environment
+
+Run the following command to build the Docker image:
+```bash
+docker build -f Dockerfile.prod -t payments-ms .
+```
+
 ## Installation
 
 ```bash
